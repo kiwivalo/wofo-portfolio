@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Wofo Site</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+    .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-box { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 40px; width: 100%; max-width: 400px; }
+    .login-box h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .login-box p { color: #888; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; background: #0a0a0a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 0.95rem; font-family: inherit; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #e63946; }
+    .btn { width: 100%; padding: 14px; background: #e63946; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #c1121f; }
+    .error { color: #e63946; font-size: 0.9rem; margin-top: 12px; display: none; }
+    .admin-panel { display: none; padding: 30px 20px; max-width: 900px; margin: 0 auto; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #333; }
+    .admin-header h1 { font-size: 1.5rem; }
+    .logout-btn { padding: 10px 20px; background: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+    .logout-btn:hover { background: #444; }
+    .section { background: #1a1a1a; border: 1px solid #333; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+    .section h2 { font-size: 1rem; margin-bottom: 16px; color: #e63946; display: flex; align-items: center; gap: 8px; }
+    .section h2::before { content: ''; width: 4px; height: 16px; background: #e63946; border-radius: 2px; }
+    .section-grid { display: grid; gap: 12px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2a2a2a; }
+    .toggle-group:last-child { border-bottom: none; }
+    .toggle-group label { font-size: 0.9rem; }
+    .toggle { position: relative; width: 50px; height: 26px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 26px; transition: 0.3s; }
+    .toggle-slider::before { position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+    .toggle input:checked + .toggle-slider { background: #e63946; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(24px); }
+    .color-input { display: flex; align-items: center; gap: 10px; }
+    .color-input input[type="color"] { width: 50px; height: 40px; border: none; border-radius: 8px; cursor: pointer; background: none; }
+    .color-input span { font-size: 0.85rem; color: #666; }
+    .btn-save { width: 100%; padding: 16px; background: linear-gradient(135deg, #e63946, #c1121f); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 20px; }
+    .btn-save:hover { background: linear-gradient(135deg, #ff4d5a, #e63946); }
+    .btn-save:disabled { background: #666; cursor: not-allowed; }
+    .toast { position: fixed; bottom: 30px; right: 30px; background: #1a1a1a; border: 1px solid #4ade80; color: #4ade80; padding: 16px 24px; border-radius: 8px; display: none; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: #1a1a1a; padding: 4px; border-radius: 12px; }
+    .tab { flex: 1; padding: 12px; background: transparent; border: none; color: #888; font-size: 0.85rem; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
+    .tab:hover { color: #fff; }
+    .tab.active { background: #e63946; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .preview-btn { display: inline-block; padding: 8px 16px; background: #333; color: #fff; border-radius: 6px; text-decoration: none; font-size: 0.85rem; margin-top: 20px; }
+    .preview-btn:hover { background: #444; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .tabs { flex-wrap: wrap; } .tab { flex: 1 1 45%; } }
+  </style>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <h1>Admin Login</h1>
+      <p>Enter your password to access the admin panel</p>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter password..." onkeypress="if(event.key==='Enter')login()">
+      </div>
+      <button class="btn" onclick="login()">Login</button>
+      <p class="error" id="errorMsg">Invalid password</p>
+    </div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-header">
+      <h1>Wofo Admin Panel</h1>
+      <div style="display:flex;gap:10px;">
+        <a href="/" target="_blank" class="preview-btn">Preview Site</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('profile')">Profile</button>
+      <button class="tab" onclick="switchTab('theme')">Theme</button>
+      <button class="tab" onclick="switchTab('social')">Social</button>
+      <button class="tab" onclick="switchTab('media')">Media</button>
+      <button class="tab" onclick="switchTab('advanced')">Advanced</button>
+    </div>
+
+    <div id="tab-profile" class="tab-content active">
+      <div class="section">
+        <h2>Basic Info</h2>
+        <div class="section-grid">
+          <div class="form-row">
+            <div class="form-group"><label>Display Name</label><input type="text" id="displayName"></div>
+            <div class="form-group"><label>Username</label><input type="text" id="username" placeholder="@username"></div>
+          </div>
+          <div class="form-group"><label>Bio</label><input type="text" id="bio"></div>
+          <div class="form-group"><label>Greeting Text</label><input type="text" id="greetingText" placeholder="e.g. Welcome to my world"></div>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Profile Image</h2>
+        <div class="section-grid">
+          <div class="form-group"><label>Profile Image URL</label><input type="text" id="profileImage" placeholder="https://..."></div>
+          <div class="form-group">
+            <label>Profile Shape</label>
+            <select id="profileShape">
+              <option value="circle">Circle</option>
+              <option value="square">Square</option>
+              <option value="hexagon">Hexagon</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Footer</h2>
+        <div class="section-grid">
+          <div class="form-group"><label>Footer Name</label><input type="text" id="footerName"></div>
+          <div class="form-group"><label>Custom Page Title</label><input type="text" id="customTitle"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-theme" class="tab-content">
+      <div class="section">
+        <h2>Theme Settings</h2>
+        <div class="section-grid">
+          <div class="form-group">
+            <label>Default Theme</label>
+            <select id="theme">
+              <option value="light">Light (White & Red)</option>
+              <option value="dark">Dark (Black & Red)</option>
+              <option value="synthwave">Synthwave (Purple/Pink)</option>
+              <option value="ocean">Ocean (Blue/Teal)</option>
+              <option value="forest">Forest (Green)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Accent Color</label>
+            <div class="color-input">
+              <input type="color" id="accentColor" value="#e63946">
+              <span>Click to pick a color</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Font Family</label>
+            <select id="fontFamily">
+              <option value="Inter">Inter (Clean)</option>
+              <option value="Orbitron">Orbitron (Futuristic)</option>
+              <option value="Press Start 2P">Press Start 2P (Retro)</option>
+              <option value="Rajdhani">Rajdhani (Tech)</option>
+              <option value="Audiowide">Audiowide (Modern)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Background Effects</h2>
+        <div class="section-grid">
+          <div class="form-group">
+            <label>Background Style</label>
+            <select id="backgroundEffect">
+              <option value="none">None (Clean)</option>
+              <option value="particles">Particles</option>
+              <option value="grid">Grid Lines</option>
+              <option value="gradientOrbs">Gradient Orbs</option>
+            </select>
+          </div>
+        </div>
+        <div class="toggle-group">
+          <label>Cursor Glow Effect</label>
+          <label class="toggle"><input type="checkbox" id="cursorGlow"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-group">
+          <label>Glitch Effect on Name</label>
+          <label class="toggle"><input type="checkbox" id="glitchEffect"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Layout</h2>
+        <div class="section-grid">
+          <div class="form-group">
+            <label>Link Style</label>
+            <select id="linkStyle">
+              <option value="card">Card (with icon)</option>
+              <option value="pill">Pill (centered)</option>
+              <option value="minimal">Minimal (text only)</option>
+              <option value="compact">Compact</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-social" class="tab-content">
+      <div class="section">
+        <h2>Social Links</h2>
+        <div class="section-grid">
+          <div class="form-group"><label>YouTube URL</label><input type="url" id="youtubeUrl" placeholder="https://youtube.com/@..."></div>
+          <div class="form-group"><label>Instagram URL</label><input type="url" id="instagramUrl" placeholder="https://instagram.com/..."></div>
+          <div class="form-group"><label>GitHub URL</label><input type="url" id="githubUrl" placeholder="https://github.com/..."></div>
+          <div class="form-group"><label>Steam URL</label><input type="url" id="steamUrl" placeholder="https://steamcommunity.com/..."></div>
+          <div class="form-group"><label>TikTok URL</label><input type="url" id="tiktokUrl" placeholder="https://tiktok.com/@..."></div>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Spotify Embeds</h2>
+        <div class="section-grid">
+          <div class="form-group"><label>Spotify Playlist URL</label><input type="url" id="spotifyPlaylistUrl" placeholder="https://open.spotify.com/playlist/..."></div>
+          <div class="form-group"><label>Spotify Profile URL</label><input type="url" id="spotifyProfileUrl" placeholder="https://open.spotify.com/user/..."></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-media" class="tab-content">
+      <div class="section">
+        <h2>Music Player</h2>
+        <div class="section-grid">
+          <div class="form-group"><label>Music File URL (MP3)</label><input type="url" id="musicUrl" placeholder="/music/your-song.mp3"></div>
+        </div>
+        <div class="toggle-group">
+          <label>Show Music Player</label>
+          <label class="toggle"><input type="checkbox" id="showMusicPlayer" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-advanced" class="tab-content">
+      <div class="section">
+        <h2>Custom CSS</h2>
+        <div class="section-grid">
+          <div class="form-group">
+            <textarea id="customCss" rows="8" placeholder="/* Add your custom CSS here */&#10;&#10;/* Example: */&#10;.profile-name {&#10;  font-size: 3rem;&#10;}"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Analytics</h2>
+        <div class="section-grid">
+          <div class="stat-display" style="background:#0a0a0a;padding:20px;border-radius:12px;text-align:center;">
+            <div style="font-size:2rem;font-weight:800;color:#e63946;" id="viewCountDisplay">0</div>
+            <div style="font-size:0.8rem;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Views</div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Features</h2>
+        <div class="toggle-group">
+          <label>Show View Counter</label>
+          <label class="toggle"><input type="checkbox" id="showViews"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-group">
+          <label>Animations Enabled</label>
+          <label class="toggle"><input type="checkbox" id="animationsEnabled" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-save" id="saveBtn" onclick="saveAll()">Save All Changes</button>
+  </div>
+
+  <div class="toast" id="toast">Settings saved successfully!</div>
+
+  <script>
+    const PASSWORD = '201269776557';
+    let settings = {};
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    function login() {
+      const pass = document.getElementById('password').value;
+      if (pass === PASSWORD) {
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadSettings();
+      } else {
+        document.getElementById('errorMsg').style.display = 'block';
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem('adminLoggedIn');
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('password').value = '';
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    async function loadSettings() {
+      try {
+        const [settingsRes, statsRes] = await Promise.all([
+          fetch('/api/settings'),
+          fetch(`/api/admin/stats?password=${PASSWORD}`)
+        ]);
+        settings = await settingsRes.json();
+        const stats = await statsRes.json();
+        populateFields();
+        document.getElementById('viewCountDisplay').textContent = (stats.totalViews || 0).toLocaleString();
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    function populateFields() {
+      const fields = ['displayName', 'username', 'bio', 'profileImage', 'footerName', 'customTitle', 'greetingText', 'theme', 'accentColor', 'fontFamily', 'backgroundEffect', 'profileShape', 'linkStyle', 'cursorGlow', 'glitchEffect', 'youtubeUrl', 'instagramUrl', 'githubUrl', 'steamUrl', 'tiktokUrl', 'spotifyPlaylistUrl', 'spotifyProfileUrl', 'musicUrl', 'showMusicPlayer', 'showViews', 'animationsEnabled', 'customCss'];
+      fields.forEach(field => {
+        const el = document.getElementById(field);
+        if (!el) return;
+        if (el.type === 'checkbox') {
+          el.checked = settings[field] === 'true' || settings[field] === true;
+        } else if (el.tagName === 'SELECT' && el.multiple) {
+          el.value = settings[field] || [];
+        } else {
+          el.value = settings[field] || '';
+        }
+      });
+    }
+
+    async function saveAll() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const newSettings = {};
+      const fields = ['displayName', 'username', 'bio', 'profileImage', 'footerName', 'customTitle', 'greetingText', 'theme', 'accentColor', 'fontFamily', 'backgroundEffect', 'profileShape', 'linkStyle', 'youtubeUrl', 'instagramUrl', 'githubUrl', 'steamUrl', 'tiktokUrl', 'spotifyPlaylistUrl', 'spotifyProfileUrl', 'musicUrl', 'customCss'];
+      fields.forEach(field => {
+        const el = document.getElementById(field);
+        if (el) newSettings[field] = el.value;
+      });
+
+      const checkboxes = ['cursorGlow', 'glitchEffect', 'showMusicPlayer', 'showViews', 'animationsEnabled'];
+      checkboxes.forEach(field => {
+        const el = document.getElementById(field);
+        if (el) newSettings[field] = el.checked ? 'true' : 'false';
+      });
+
+      try {
+        const res = await fetch('/api/settings/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: PASSWORD, settings: newSettings })
+        });
+        if (res.ok) showToast();
+      } catch (err) {
+        console.error('Save failed:', err);
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Save All Changes';
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      loadSettings();
+    }
+  </script>
+</body>
+</html>
