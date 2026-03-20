@@ -44,21 +44,44 @@ const defaults = {
   customTitle: 'Wofo'
 };
 
+let cachedSettings = null;
+
 function loadSettings() {
+  if (cachedSettings) return cachedSettings;
+  
+  if (process.env.WOFO_SETTINGS) {
+    try {
+      cachedSettings = { ...defaults, ...JSON.parse(process.env.WOFO_SETTINGS) };
+      return cachedSettings;
+    } catch (e) {}
+  }
+  
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
-      return { ...defaults, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) };
+      cachedSettings = { ...defaults, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) };
+      return cachedSettings;
     }
   } catch (e) {}
-  return { ...defaults };
+  
+  cachedSettings = { ...defaults };
+  return cachedSettings;
 }
 
 function saveSettings(data) {
   const current = loadSettings();
   const updated = { ...current, ...data };
+  cachedSettings = updated;
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(updated, null, 2));
   return updated;
 }
+
+app.get('/api/settings/export', (req, res) => {
+  const { password } = req.query;
+  if (!validatePassword(password)) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+  res.json({ settings: loadSettings() });
+});
 
 function loadViews() {
   try {
